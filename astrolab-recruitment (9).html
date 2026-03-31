@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASTROLAB — Crew Recruitment | UM6P / SASE</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #020810;
+    --deep: #060d1a;
+    --panel: #0a1628;
+    --border: #1a3050;
+    --accent: #00a8ff;
+    --accent2: #0066cc;
+    --gold: #f0a500;
+    --green: #00ff88;
+    --text: #c8ddf0;
+    --muted: #4a6a8a;
+    --white: #f0f8ff;
+    --danger: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid rgba(0,168,255,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.15s ease;
+  }
+
+  /* ── STAR CANVAS ── */
+  #starfield {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── SCAN LINE OVERLAY ── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── LAYOUT ── */
+  .wrapper {
+    position: relative;
+    z-index: 10;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 80px 0 60px;
+    text-align: center;
+    position: relative;
+  }
+
+  .mission-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    background: rgba(0,168,255,0.05);
+    padding: 6px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .mission-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(48px, 8vw, 80px);
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+  .hero-title span {
+    color: var(--accent);
+    display: block;
+  }
+
+  .hero-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-top: 20px;
+    margin-bottom: 16px;
+  }
+
+  .hero-desc {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    max-width: 520px;
+    margin: 0 auto 40px;
+    opacity: 0.8;
+  }
+
+  /* orbit ring decoration */
+  .orbit-deco {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px; height: 500px;
+    border: 1px solid rgba(0,168,255,0.04);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    animation: orbit-spin 40s linear infinite;
+  }
+  .orbit-deco::after {
+    content: '';
+    position: absolute;
+    top: -3px; left: 50%;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+    transform: translateX(-50%);
+  }
+  .orbit-deco-2 {
+    width: 650px; height: 650px;
+    border-color: rgba(0,168,255,0.02);
+    animation-duration: 65s;
+    animation-direction: reverse;
+  }
+  @keyframes orbit-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(2,8,16,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    backdrop-filter: blur(20px);
+  }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 760px;
+    margin: 0 auto 8px;
+  }
+  .progress-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+  }
+  .progress-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--accent);
+  }
+  .progress-track {
+    max-width: 760px;
+    margin: 0 auto;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--green));
+    width: 0%;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* ── FORM ── */
+  form { display: flex; flex-direction: column; gap: 0; }
+
+  /* ── SECTION BLOCKS ── */
+  .form-section {
+    margin-bottom: 48px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .form-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    background: rgba(0,168,255,0.08);
+    border: 1px solid rgba(0,168,255,0.2);
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--white);
+    letter-spacing: -0.02em;
+  }
+  .section-title-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* ── FIELDS ── */
+  .field {
+    margin-bottom: 24px;
+  }
+
+  label {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  label .required {
+    color: var(--accent);
+    margin-left: 4px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  textarea,
+  select {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--accent);
+    background: rgba(0,168,255,0.04);
+    box-shadow: 0 0 0 1px rgba(0,168,255,0.2), inset 0 0 20px rgba(0,168,255,0.02);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted);
+    font-style: italic;
+    font-weight: 300;
+  }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  select option { background: var(--deep); color: var(--white); }
+
+  /* ── RADIO / CHECKBOX GROUPS ── */
+  .radio-group, .check-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .radio-group.horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .radio-option, .check-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    user-select: none;
+  }
+  .radio-option:hover, .check-option:hover {
+    border-color: rgba(0,168,255,0.4);
+    background: rgba(0,168,255,0.04);
+  }
+  .radio-option input, .check-option input {
+    position: absolute;
+    opacity: 0;
+    width: 0; height: 0;
+  }
+  .radio-option.selected, .check-option.selected {
+    border-color: var(--accent);
+    background: rgba(0,168,255,0.08);
+  }
+  .radio-option.selected::before {
+    content: '◆';
+    position: absolute;
+    right: 14px;
+    color: var(--accent);
+    font-size: 8px;
+  }
+  .check-option.selected::before {
+    content: '✓';
+    position: absolute;
+    right: 14px;
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .option-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .option-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Team cards */
+  .team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .team-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .team-card:hover {
+    border-color: rgba(0,168,255,0.4);
+    background: rgba(0,168,255,0.04);
+    transform: translateY(-2px);
+  }
+  .team-card.selected {
+    border-color: var(--accent);
+    background: rgba(0,168,255,0.1);
+  }
+  .team-card.selected .team-icon { color: var(--accent); }
+  .team-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+    display: block;
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .team-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--white);
+    letter-spacing: 0.05em;
+  }
+  .team-desc {
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .team-card input { display: none; }
+  .team-selected-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 7px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .team-card.selected .team-selected-badge { opacity: 1; }
+
+  /* Hours selector */
+  .hours-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .hours-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 20px 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .hours-card:hover {
+    border-color: rgba(0,168,255,0.4);
+    transform: translateY(-2px);
+  }
+  .hours-card.selected {
+    border-color: var(--gold);
+    background: rgba(240,165,0,0.06);
+  }
+  .hours-card input { display: none; }
+  .hours-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .hours-card.selected .hours-num { color: var(--gold); }
+  .hours-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Confirm toggle */
+  .confirm-box {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+  }
+  .confirm-box:hover { border-color: rgba(0,168,255,0.3); }
+  .confirm-box.confirmed {
+    border-color: var(--green);
+    background: rgba(0,255,136,0.04);
+  }
+  .confirm-box input { display: none; }
+  .confirm-toggle {
+    width: 20px; height: 20px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--green);
+    transition: all 0.2s;
+  }
+  .confirm-box.confirmed .confirm-toggle {
+    border-color: var(--green);
+    background: rgba(0,255,136,0.1);
+  }
+  .confirm-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* ── CHAR COUNTER ── */
+  .char-counter {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 6px;
+    transition: color 0.2s;
+  }
+  .char-counter.warn { color: var(--gold); }
+  .char-counter.over { color: var(--danger); }
+
+  /* ── FIELD NOTE ── */
+  .field-note {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 8px;
+    padding-left: 12px;
+    border-left: 2px solid var(--border);
+    line-height: 1.6;
+  }
+  .field-note.warning {
+    border-color: var(--gold);
+    color: rgba(240,165,0,0.7);
+  }
+
+  /* ── SUBMIT ── */
+  .submit-section {
+    margin-top: 16px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .submit-wrap {
+    display: inline-block;
+    position: relative;
+  }
+
+  .submit-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    padding: 18px 48px;
+    cursor: pointer;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,168,255,0.15), transparent);
+    transition: left 0.4s;
+  }
+  .submit-btn:hover::before { left: 100%; }
+  .submit-btn:hover {
+    background: rgba(0,168,255,0.08);
+    box-shadow: 0 0 30px rgba(0,168,255,0.2);
+    color: var(--white);
+  }
+  .submit-btn:active { transform: scale(0.99); }
+
+  .submit-note {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 16px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── SUCCESS STATE ── */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 80px 40px;
+  }
+  .success-screen.visible { display: block; }
+  .success-icon {
+    font-size: 48px;
+    margin-bottom: 24px;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { filter: drop-shadow(0 0 8px var(--green)); }
+    50% { filter: drop-shadow(0 0 20px var(--green)); }
+  }
+  .success-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+  .success-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+  }
+  .success-msg {
+    font-size: 14px;
+    color: var(--text);
+    max-width: 420px;
+    margin: 20px auto 0;
+    line-height: 1.7;
+    opacity: 0.8;
+  }
+
+  /* ── TELEMETRY TICKER ── */
+  .telemetry {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    border-top: 1px solid var(--border);
+    background: rgba(2,8,16,0.9);
+    backdrop-filter: blur(10px);
+    padding: 8px 24px;
+    display: flex;
+    gap: 32px;
+    z-index: 50;
+    overflow: hidden;
+  }
+  .telem-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5px;
+    color: var(--muted);
+  }
+  .telem-val {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .telem-dot {
+    width: 4px; height: 4px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: blink 2s ease-in-out infinite;
+  }
+  .telem-scroll {
+    display: flex;
+    gap: 32px;
+    animation: telem-move 25s linear infinite;
+  }
+  @keyframes telem-move {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .team-grid { grid-template-columns: 1fr; }
+    .hours-grid { grid-template-columns: 1fr; }
+    .hero-title { font-size: 42px; }
+    .radio-group.horizontal { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hidden iframe — absorbs Google Forms redirect so page never navigates away -->
+<iframe name="google-iframe" style="display:none;" aria-hidden="true"></iframe>
+
+<!-- Custom cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Starfield -->
+<canvas id="starfield"></canvas>
+
+<!-- Progress bar -->
+<div class="progress-bar-wrap">
+  <div class="progress-info">
+    <span class="progress-label">MISSION PROGRESS</span>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="orbit-deco"></div>
+    <div class="orbit-deco orbit-deco-2"></div>
+    <div class="mission-badge">RECRUITMENT OPEN — AY 2025/2026</div>
+    <h1 class="hero-title">JOIN THE<span>CREW</span></h1>
+    <p class="hero-sub">ASTROLAB — UM6P / SASE — ASTRONAUTICS & SPACE ROBOTICS</p>
+    <p class="hero-desc">We are building a 3U CubeSat prototype and a Mars rover. We are looking for undergraduate engineers who want to do real work — not simulate it.</p>
+  </div>
+
+  <!-- Form -->
+  <form id="recruitForm" novalidate>
+
+    <!-- SECTION 1 — ABOUT YOU -->
+    <div class="form-section" data-section="1">
+      <div class="section-header">
+        <span class="section-num">01 / 05</span>
+        <span class="section-title">About You</span>
+        <div class="section-title-line"></div>
+      </div>
+
+      <div class="field">
+        <label>Full Name <span class="required">*</span></label>
+        <input type="text" name="name" placeholder="Your full name" required>
+      </div>
+
+      <div class="field">
+        <label>Year of Study <span class="required">*</span></label>
+        <div class="radio-group horizontal" id="yearGroup">
+          <label class="radio-option" onclick="selectRadio(this, 'yearGroup', 'year', '1')">
+            <input type="radio" name="year" value="1">
+            <div><div class="option-label">Year 1</div></div>
+          </label>
+          <label class="radio-option" onclick="selectRadio(this, 'yearGroup', 'year', '2')">
+            <input type="radio" name="year" value="2">
+            <div><div class="option-label">Year 2</div></div>
+          </label>
+          <label class="radio-option" onclick="selectRadio(this, 'yearGroup', 'year', '3')">
+            <input type="radio" name="year" value="3">
+            <div><div class="option-label">Year 3</div></div>
+          </label>
+          <label class="radio-option" onclick="selectRadio(this, 'yearGroup', 'year', '4')">
+            <input type="radio" name="year" value="4">
+            <div><div class="option-label">Year 4</div></div>
+          </label>
+          <label class="radio-option" onclick="selectRadio(this, 'yearGroup', 'year', '5')">
+            <input type="radio" name="year" value="5">
+            <div><div class="option-label">Year 5</div></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Email Address <span class="required">*</span></label>
+        <input type="email" name="email" placeholder="your.name@um6p.ma" required>
+      </div>
+    </div>
+
+    <!-- SECTION 2 — BACKGROUND -->
+    <div class="form-section" data-section="2">
+      <div class="section-header">
+        <span class="section-num">02 / 05</span>
+        <span class="section-title">Your Background</span>
+        <div class="section-title-line"></div>
+      </div>
+
+      <div class="field">
+        <label>Engineering Projects <span class="required">*</span></label>
+        <textarea name="projects" id="projectsTA" placeholder="Describe any engineering projects you have worked on — personal, academic, or extracurricular. If none, write 'None yet' and tell us what you'd like to build." maxlength="600"></textarea>
+        <div class="char-counter" id="projectsCounter">0 / 600</div>
+      </div>
+
+      <div class="field">
+        <label>Tools & Software</label>
+        <div class="check-group" id="toolsGroup">
+          <div class="check-option" onclick="toggleCheckById('tool-cad')">
+            <input type="checkbox" id="tool-cad" name="tools" value="CAD">
+            <div><div class="option-label">CAD — SolidWorks / Fusion 360 / AutoCAD</div></div>
+          </div>
+          <div class="check-option" onclick="toggleCheckById('tool-matlab')">
+            <input type="checkbox" id="tool-matlab" name="tools" value="MATLAB">
+            <div><div class="option-label">MATLAB / Simulink</div></div>
+          </div>
+          <div class="check-option" onclick="toggleCheckById('tool-python')">
+            <input type="checkbox" id="tool-python" name="tools" value="Python">
+            <div><div class="option-label">Python</div></div>
+          </div>
+          <div class="check-option" onclick="toggleCheckById('tool-arduino')">
+            <input type="checkbox" id="tool-arduino" name="tools" value="Arduino">
+            <div><div class="option-label">Arduino / Embedded C</div></div>
+          </div>
+          <div class="check-option" onclick="toggleCheckById('tool-other')">
+            <input type="checkbox" id="tool-other" name="tools" value="Other">
+            <div><div class="option-label">Other — specify below</div></div>
+          </div>
+        </div>
+        <input type="text" name="tools_other" placeholder="Other tools (optional)" style="margin-top:10px;">
+      </div>
+
+      <div class="field">
+        <label>Clubs, Competitions & Research</label>
+        <textarea name="activities" id="activitiesTA" placeholder="List any clubs, competitions, hackathons, or research activities you have participated in." maxlength="400"></textarea>
+        <div class="char-counter" id="activitiesCounter">0 / 400</div>
+      </div>
+    </div>
+
+    <!-- SECTION 3 — TEAM PREFERENCE -->
+    <div class="form-section" data-section="3">
+      <div class="section-header">
+        <span class="section-num">03 / 05</span>
+        <span class="section-title">Team Preference</span>
+        <div class="section-title-line"></div>
+      </div>
+
+      <div class="field">
+        <label>Which team are you most interested in? <span class="required">*</span></label>
+        <div class="team-grid" id="teamGrid">
+          <label class="team-card" onclick="selectTeam(this, 'MECH')">
+            <input type="radio" name="team" value="MECH">
+            <span class="team-selected-badge">SELECTED ◆</span>
+            <span class="team-icon">⚙️</span>
+            <div class="team-name">MECH</div>
+            <div class="team-desc">Structure, CAD, mass budget,<br>thermal estimation, solar tracker</div>
+          </label>
+          <label class="team-card" onclick="selectTeam(this, 'ELEC')">
+            <input type="radio" name="team" value="ELEC">
+            <span class="team-selected-badge">SELECTED ◆</span>
+            <span class="team-icon">⚡</span>
+            <div class="team-name">ELEC</div>
+            <div class="team-desc">EPS design, OBC firmware,<br>hardware integration</div>
+          </label>
+          <label class="team-card" onclick="selectTeam(this, 'SIM')">
+            <input type="radio" name="team" value="SIM">
+            <span class="team-selected-badge">SELECTED ◆</span>
+            <span class="team-icon">🛰️</span>
+            <div class="team-name">SIM</div>
+            <div class="team-desc">Orbit simulation, power models,<br>ADCS, link budget</div>
+          </label>
+          <label class="team-card" onclick="selectTeam(this, 'WRITING')">
+            <input type="radio" name="team" value="WRITING">
+            <span class="team-selected-badge">SELECTED ◆</span>
+            <span class="team-icon">📄</span>
+            <div class="team-name">WRITING</div>
+            <div class="team-desc">Documentation, design reviews,<br>science communication, SDR</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Why that team? <span class="required">*</span></label>
+        <textarea name="team_why" id="teamWhyTA" placeholder="Tell us why you chose this team. What specifically draws you to this work? What do you want to contribute? (3–5 sentences)" maxlength="500"></textarea>
+        <div class="char-counter" id="teamWhyCounter">0 / 500</div>
+      </div>
+    </div>
+
+    <!-- SECTION 4 — MOTIVATION -->
+    <div class="form-section" data-section="4">
+      <div class="section-header">
+        <span class="section-num">04 / 05</span>
+        <span class="section-title">Motivation</span>
+        <div class="section-title-line"></div>
+      </div>
+
+      <div class="field">
+        <label>Why do you want to join Astrolab? <span class="required">*</span></label>
+        <textarea name="motivation" id="motivationTA" placeholder="What do you want to build and learn? What gap does Astrolab fill for you? Be specific — 'I love space' is not an answer." maxlength="600"></textarea>
+        <div class="char-counter" id="motivationCounter">0 / 600</div>
+        <div class="field-note warning">We are looking for specificity. Tell us what you want to build and learn — not how much you love space.</div>
+      </div>
+
+      <div class="field">
+        <label>What should Astrolab achieve by end of Year 1? <span class="required">*</span></label>
+        <textarea name="goal" id="goalTA" placeholder="One concrete, measurable thing you would consider a success for the club by the end of this academic year." maxlength="300"></textarea>
+        <div class="char-counter" id="goalCounter">0 / 300</div>
+      </div>
+    </div>
+
+    <!-- SECTION 5 — COMMITMENT -->
+    <div class="form-section" data-section="5">
+      <div class="section-header">
+        <span class="section-num">05 / 05</span>
+        <span class="section-title">Commitment</span>
+        <div class="section-title-line"></div>
+      </div>
+
+      <div class="field">
+        <label>Weekly Hours Commitment <span class="required">*</span></label>
+        <div class="hours-grid" id="hoursGroup">
+          <label class="hours-card" onclick="selectHours(this, '2hrs')">
+            <input type="radio" name="hours" value="2hrs">
+            <div class="hours-num">2</div>
+            <div class="hours-label">HRS / WEEK</div>
+          </label>
+          <label class="hours-card" onclick="selectHours(this, '4hrs')">
+            <input type="radio" name="hours" value="4hrs">
+            <div class="hours-num">4</div>
+            <div class="hours-label">HRS / WEEK</div>
+          </label>
+          <label class="hours-card" onclick="selectHours(this, 'more')">
+            <input type="radio" name="hours" value="more">
+            <div class="hours-num">4+</div>
+            <div class="hours-label">HRS / WEEK</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Weekly Team Meetings <span class="required">*</span></label>
+        <div class="radio-group" id="meetingsGroup">
+          <label class="radio-option" onclick="selectRadio(this, 'meetingsGroup', 'meetings', 'yes')">
+            <input type="radio" name="meetings" value="yes">
+            <div><div class="option-label">Yes — I can attend weekly</div></div>
+          </label>
+          <label class="radio-option" onclick="selectRadio(this, 'meetingsGroup', 'meetings', 'depends')">
+            <input type="radio" name="meetings" value="depends">
+            <div><div class="option-label">Depends on schedule — I will communicate conflicts in advance</div></div>
+          </label>
+          <label class="radio-option" onclick="selectRadio(this, 'meetingsGroup', 'meetings', 'no')">
+            <input type="radio" name="meetings" value="no">
+            <div><div class="option-label">No — I cannot commit to weekly meetings</div></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Project Commitment Acknowledgement <span class="required">*</span></label>
+        <div class="confirm-box" id="confirmBox" onclick="toggleConfirm()">
+          <input type="checkbox" name="confirm" id="confirmCheck" style="display:none;">
+          <div class="confirm-toggle" id="confirmToggle"></div>
+          <div class="confirm-text">I understand that Astrolab is a project-based club with real deliverables, design review milestones, and faculty-validated gate criteria. Membership requires active contribution, not passive participation.</div>
+        </div>
+        <div class="field-note">This is not a formality. If you are not ready to commit to real engineering work, this is not the right club for you — and that is okay.</div>
+      </div>
+
+      <div class="field">
+        <label>Anything else?</label>
+        <textarea name="extra" id="extraTA" placeholder="Anything else you want us to know — context, constraints, questions, or anything that doesn't fit the form." maxlength="400"></textarea>
+        <div class="char-counter" id="extraCounter">0 / 400</div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="submit-section form-section" data-section="submit">
+      <div class="submit-wrap">
+        <button type="submit" class="submit-btn">TRANSMIT APPLICATION →</button>
+      </div>
+      <p class="submit-note">Applications reviewed by founding board — UM6P / SASE — AY 2025/2026</p>
+    </div>
+
+  </form>
+
+  <!-- SUCCESS -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">🛰️</div>
+    <h2 class="success-title">Transmission Received</h2>
+    <p class="success-sub">APPLICATION ID: <span id="appId"></span></p>
+    <p class="success-msg">Your application has been logged. The founding board will review all submissions and reach out. Welcome to the mission.</p>
+  </div>
+
+</div>
+
+<!-- Telemetry bar -->
+<div class="telemetry">
+  <div class="telem-scroll" id="telemScroll">
+    <div class="telem-item"><div class="telem-dot"></div> STATUS <span class="telem-val">RECRUITING</span></div>
+    <div class="telem-item">ORBIT <span class="telem-val">550 KM SSO</span></div>
+    <div class="telem-item">FORM FACTOR <span class="telem-val">3U CUBESAT</span></div>
+    <div class="telem-item">TEAMS <span class="telem-val">MECH / ELEC / SIM / WRITING</span></div>
+    <div class="telem-item">INSTITUTION <span class="telem-val">UM6P / SASE</span></div>
+    <div class="telem-item">AY <span class="telem-val">2025 / 2026</span></div>
+    <div class="telem-item">PHASE <span class="telem-val">CREW SELECTION</span></div>
+    <div class="telem-item">ADVISOR <span class="telem-val">FACULTY — VANGUARD LAB</span></div>
+    <!-- duplicate for seamless loop -->
+    <div class="telem-item"><div class="telem-dot"></div> STATUS <span class="telem-val">RECRUITING</span></div>
+    <div class="telem-item">ORBIT <span class="telem-val">550 KM SSO</span></div>
+    <div class="telem-item">FORM FACTOR <span class="telem-val">3U CUBESAT</span></div>
+    <div class="telem-item">TEAMS <span class="telem-val">MECH / ELEC / SIM / WRITING</span></div>
+    <div class="telem-item">INSTITUTION <span class="telem-val">UM6P / SASE</span></div>
+    <div class="telem-item">AY <span class="telem-val">2025 / 2026</span></div>
+    <div class="telem-item">PHASE <span class="telem-val">CREW SELECTION</span></div>
+    <div class="telem-item">ADVISOR <span class="telem-val">FACULTY — VANGUARD LAB</span></div>
+  </div>
+</div>
+
+<script>
+// ── CURSOR ────────────────────────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 4 + 'px';
+  cursor.style.top  = my - 4 + 'px';
+});
+
+function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx - 16 + 'px';
+  ring.style.top  = ry - 16 + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+document.querySelectorAll('input, textarea, button, label').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.transform = 'scale(2)';
+    ring.style.transform = 'scale(1.5)';
+    ring.style.borderColor = 'rgba(0,168,255,0.7)';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.transform = 'scale(1)';
+    ring.style.transform = 'scale(1)';
+    ring.style.borderColor = 'rgba(0,168,255,0.4)';
+  });
+});
+
+// ── STARFIELD ─────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('starfield');
+const ctx = canvas.getContext('2d');
+let stars = [];
+
+function initStars() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  stars = [];
+  for (let i = 0; i < 200; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2,
+      a: Math.random(),
+      speed: 0.001 + Math.random() * 0.002,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function drawStars() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const t = Date.now() * 0.001;
+  stars.forEach(s => {
+    const alpha = s.a * (0.5 + 0.5 * Math.sin(t * s.speed * 10 + s.phase));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(180,210,255,${alpha})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+
+window.addEventListener('resize', initStars);
+initStars();
+drawStars();
+
+// ── INTERSECTION OBSERVER — SECTION REVEAL ───────────────────────────────────
+const sections = document.querySelectorAll('.form-section');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+sections.forEach(s => observer.observe(s));
+
+// ── PROGRESS ──────────────────────────────────────────────────────────────────
+function updateProgress() {
+  const required = document.querySelectorAll('[required]');
+  let filled = 0;
+  required.forEach(el => {
+    if (el.type === 'radio' || el.type === 'checkbox') {
+      const name = el.name;
+      if (document.querySelector(`[name="${name}"]:checked`)) filled++;
+    } else if (el.value.trim()) filled++;
+  });
+  // also count team selection and hours
+  const teamSel = document.querySelector('[name="team"]:checked');
+  const hoursSel = document.querySelector('[name="hours"]:checked');
+  const confirmSel = document.querySelector('[name="confirm"]:checked');
+  let extra = (teamSel ? 1 : 0) + (hoursSel ? 1 : 0) + (confirmSel ? 1 : 0);
+
+  const total = required.length + 3;
+  const pct = Math.round(((filled + extra) / total) * 100);
+  const clamped = Math.min(pct, 100);
+  document.getElementById('progressFill').style.width = clamped + '%';
+  document.getElementById('progressPct').textContent = clamped + '%';
+}
+
+document.querySelectorAll('input, textarea, select').forEach(el => {
+  el.addEventListener('input', updateProgress);
+  el.addEventListener('change', updateProgress);
+});
+
+// ── CHAR COUNTERS ─────────────────────────────────────────────────────────────
+function setupCounter(taId, counterId, max) {
+  const ta = document.getElementById(taId);
+  const counter = document.getElementById(counterId);
+  if (!ta || !counter) return;
+  ta.addEventListener('input', () => {
+    const len = ta.value.length;
+    counter.textContent = `${len} / ${max}`;
+    counter.className = 'char-counter';
+    if (len > max * 0.85) counter.classList.add('warn');
+    if (len >= max) counter.classList.add('over');
+  });
+}
+setupCounter('projectsTA', 'projectsCounter', 600);
+setupCounter('activitiesTA', 'activitiesCounter', 400);
+setupCounter('teamWhyTA', 'teamWhyCounter', 500);
+setupCounter('motivationTA', 'motivationCounter', 600);
+setupCounter('goalTA', 'goalCounter', 300);
+setupCounter('extraTA', 'extraCounter', 400);
+
+// ── RADIO SELECT ──────────────────────────────────────────────────────────────
+function selectRadio(el, groupId, name, value) {
+  document.querySelectorAll(`#${groupId} .radio-option`).forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  updateProgress();
+}
+
+// ── CHECK TOGGLE ──────────────────────────────────────────────────────────────
+function toggleCheckById(id) {
+  const cb = document.getElementById(id);
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  const el = cb.closest('.check-option');
+  if (el) el.classList.toggle('selected', cb.checked);
+  updateProgress();
+}
+
+// legacy — keep for safety
+function toggleCheck(el) {
+  el.classList.toggle('selected');
+  const cb = el.querySelector('input[type="checkbox"]');
+  if (cb) cb.checked = el.classList.contains('selected');
+  updateProgress();
+}
+
+// ── TEAM SELECT ───────────────────────────────────────────────────────────────
+function selectTeam(el, team) {
+  document.querySelectorAll('.team-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  updateProgress();
+}
+
+// ── HOURS SELECT ──────────────────────────────────────────────────────────────
+function selectHours(el, val) {
+  document.querySelectorAll('.hours-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  updateProgress();
+}
+
+// ── CONFIRM TOGGLE ────────────────────────────────────────────────────────────
+function toggleConfirm() {
+  const cb = document.getElementById('confirmCheck');
+  const box = document.getElementById('confirmBox');
+  const toggle = document.getElementById('confirmToggle');
+  cb.checked = !cb.checked;
+  box.classList.toggle('confirmed', cb.checked);
+  toggle.textContent = cb.checked ? '✓' : '';
+  updateProgress();
+}
+
+// ── GOOGLE FORMS CONFIG ───────────────────────────────────────────────────────
+const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSdN7eokuZUa41WKfUpPXPH_D2y8jWfFZi8EeIXjdoXjQwxx8w/formResponse';
+const ENTRY = {
+  name:      'entry.783017885',
+  email:     'entry.1031433784',
+  year:      'entry.474783584',
+  projects:  'entry.580532034',
+  tools:     'entry.1872016773',
+  activities:'entry.1276932245',
+  team:      'entry.2110128837',
+  team_why:  'entry.484714611',
+  motivation:'entry.1857604642',
+  goal:      'entry.2133997027',
+  hours:     'entry.1602418511',
+  meetings:  'entry.1048979297',
+  confirm:   'entry.883718729',
+  extra:     'entry.404932930',
+};
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────────
+document.getElementById('recruitForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  // Read values
+  const name       = document.querySelector('[name="name"]').value.trim();
+  const email      = document.querySelector('[name="email"]').value.trim();
+  const yearEl     = document.querySelector('#yearGroup .radio-option.selected input');
+  const teamEl     = document.querySelector('#teamGrid .team-card.selected input');
+  const hoursEl    = document.querySelector('#hoursGroup .hours-card.selected input');
+  const meetingsEl = document.querySelector('#meetingsGroup .radio-option.selected input');
+  const confirmed  = document.getElementById('confirmCheck').checked;
+  const motivation = document.querySelector('[name="motivation"]').value.trim();
+
+  // Highlight missing required fields
+  let missing = false;
+  if (!name)       { document.querySelector('[name="name"]').style.borderColor = 'var(--danger)'; missing = true; }
+  if (!email)      { document.querySelector('[name="email"]').style.borderColor = 'var(--danger)'; missing = true; }
+  if (!motivation) { document.querySelector('[name="motivation"]').style.borderColor = 'var(--danger)'; missing = true; }
+  if (!yearEl)     { document.getElementById('yearGroup').style.outline = '1px solid var(--danger)'; missing = true; }
+  if (!teamEl)     { document.getElementById('teamGrid').style.outline = '1px solid var(--danger)'; missing = true; }
+  if (!hoursEl)    { document.getElementById('hoursGroup').style.outline = '1px solid var(--danger)'; missing = true; }
+  if (!confirmed)  { document.getElementById('confirmBox').style.borderColor = 'var(--danger)'; missing = true; }
+
+  if (missing) {
+    const firstMissing = document.querySelector('[style*="danger"], [style*="outline"]');
+    if (firstMissing) firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      ['name','email'].forEach(n => { const el = document.querySelector('[name="'+n+'"]'); if(el) el.style.borderColor=''; });
+      document.querySelector('[name="motivation"]').style.borderColor = '';
+      document.getElementById('yearGroup').style.outline = '';
+      document.getElementById('teamGrid').style.outline = '';
+      document.getElementById('hoursGroup').style.outline = '';
+      document.getElementById('confirmBox').style.borderColor = '';
+    }, 2500);
+    return;
+  }
+
+  // Disable button
+  const btn = document.querySelector('.submit-btn');
+  btn.textContent = 'TRANSMITTING…';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  // Collect tools
+  const toolsChecked = [...document.querySelectorAll('[name="tools"]:checked')]
+    .map(cb => cb.value).join(', ');
+  const toolsOther = document.querySelector('[name="tools_other"]').value.trim();
+  const toolsFull  = toolsOther ? toolsChecked + ' — Other: ' + toolsOther : (toolsChecked || 'None specified');
+
+  // Build a hidden form that targets the invisible iframe
+  // The iframe absorbs Google's redirect — main page never navigates away
+  const hiddenForm = document.createElement('form');
+  hiddenForm.method  = 'POST';
+  hiddenForm.action  = FORM_ACTION;
+  hiddenForm.target  = 'google-iframe'; // <-- posts into the iframe
+  hiddenForm.style.display = 'none';
+
+  const fields = [
+    [ENTRY.name,       name],
+    [ENTRY.email,      email],
+    [ENTRY.year,       yearEl.value],
+    [ENTRY.projects,   document.querySelector('[name="projects"]').value.trim()],
+    [ENTRY.tools,      toolsFull],
+    [ENTRY.activities, document.querySelector('[name="activities"]').value.trim()],
+    [ENTRY.team,       teamEl.value],
+    [ENTRY.team_why,   document.querySelector('[name="team_why"]').value.trim()],
+    [ENTRY.motivation, motivation],
+    [ENTRY.goal,       document.querySelector('[name="goal"]').value.trim()],
+    [ENTRY.hours,      hoursEl.value],
+    [ENTRY.meetings,   meetingsEl ? meetingsEl.value : ''],
+    [ENTRY.confirm,    confirmed ? 'Yes — confirmed' : 'No'],
+    [ENTRY.extra,      document.querySelector('[name="extra"]').value.trim()],
+  ];
+
+  fields.forEach(([key, val]) => {
+    const input = document.createElement('input');
+    input.type  = 'hidden';
+    input.name  = key;
+    input.value = val;
+    hiddenForm.appendChild(input);
+  });
+
+  document.body.appendChild(hiddenForm);
+  hiddenForm.submit();
+  document.body.removeChild(hiddenForm);
+
+  // Show success screen after a short delay (enough for the POST to fire)
+  setTimeout(() => {
+    document.getElementById('recruitForm').style.display = 'none';
+    const success = document.getElementById('successScreen');
+    success.classList.add('visible');
+    const appId = 'ASL-' + Date.now().toString(36).toUpperCase().slice(-6);
+    document.getElementById('appId').textContent = appId;
+    success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 500);
+});
+</script>
+</body>
+</html>
